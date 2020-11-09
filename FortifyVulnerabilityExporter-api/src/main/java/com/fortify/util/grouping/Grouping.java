@@ -1,0 +1,99 @@
+/*******************************************************************************
+ * (c) Copyright 2020 Micro Focus or one of its affiliates
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a 
+ * copy of this software and associated documentation files (the 
+ * "Software"), to deal in the Software without restriction, including without 
+ * limitation the rights to use, copy, modify, merge, publish, distribute, 
+ * sublicense, and/or sell copies of the Software, and to permit persons to 
+ * whom the Software is furnished to do so, subject to the following 
+ * conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included 
+ * in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
+ * WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+ * IN THE SOFTWARE.
+ ******************************************************************************/
+package com.fortify.util.grouping;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+
+import org.apache.commons.lang.StringUtils;
+
+import lombok.Builder;
+
+@Builder
+public class Grouping<E> {
+	private final Function<E, String> groupNameFunction; // Callers use SpringExpressionUtil::expressionAsFunction(TemplateExpression,String.class)
+	private final BiConsumer<String, List<E>> groupConsumer;
+	private final BiConsumer<Grouping<E>, E> blankGroupNameConsumer;
+	private boolean useDiskBackedMap;
+	
+	// Runtime
+	// TODO Change to disk-backed map (if configured)
+	private Map<String, List<E>> $groupsMap;
+	
+	public final void add(E entity) {
+		checkNotNull("Function to get group name not configured", groupNameFunction);
+		add(groupNameFunction.apply(entity), entity);
+	}
+	public final void add(String group, E entity) {
+		if ( StringUtils.isBlank(group) ) { 
+			blankGroupNameConsumer.accept(this, entity);
+		} else {
+			getInitializedGroupsMap().computeIfAbsent(group, this::newList).add(entity);
+		}
+	}
+	public final void run() {
+		if ( $groupsMap!=null ) {
+			$groupsMap.forEach(groupConsumer);
+		}
+	}
+	public final void close() {
+		if ( $groupsMap!=null ) {
+			// TODO close $groupsMap if instance of disk-backed map
+		}
+	}
+	public final void runAndClose() {
+		run();
+		close();
+	}
+	private List<E> newList(String groupName) {
+		return new LinkedList<E>();
+	}
+	private <T> T checkNotNull(String message, T object) {
+		if ( object==null ) { throw new IllegalStateException(message); }
+		return object;
+	}
+	private Map<String, List<E>> getInitializedGroupsMap() {
+		if ( $groupsMap==null ) {
+			$groupsMap = createGroupsMap();
+		}
+		return $groupsMap;
+	}
+	private HashMap<String, List<E>> createGroupsMap() {
+		if ( useDiskBackedMap ) {
+			return new HashMap<>(); // TODO Create disk-backed map instead
+		} else {
+			return new HashMap<>();
+		}
+	}
+	
+	public static final <E> void directInvokeOnBlankGroupName(Grouping<E> grouping, E entity) {
+		grouping.groupConsumer.accept(null, Arrays.asList(entity));
+	}
+}
