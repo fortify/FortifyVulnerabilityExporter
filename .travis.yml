@@ -4,6 +4,7 @@ sudo: false
     
 stages:
   - name: build
+    if: tag IS blank AND NOT branch =~ /^(\d+.)+\d+-SNAPSHOT$/
   - name: snapshotBranch
     if: tag IS blank AND branch =~ /^(\d+.)+\d+-SNAPSHOT$/
   - name: releaseTag
