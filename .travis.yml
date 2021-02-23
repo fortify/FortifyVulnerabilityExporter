@@ -1,6 +1,10 @@
 language: java
 install: true
 sudo: false
+
+env:    
+  global:   
+    - JAVA_TOOL_OPTIONS=-Dhttps.protocols=TLSv1.2
     
 stages:
   - name: build
