@@ -1,0 +1,22 @@
+# See FortifyVulnerabilityExporter documentation for FoD connection settings and release selection
+
+export:
+  from: fod
+  to: json.raw
+
+fod:
+  release:
+    embed:                           # Load static and dynamic scan summaries if available
+      - propertyName: dynamicScanSummary
+        uri: /api/v3/scans/{currentDynamicScanId}/summary
+        embedIf: currentDynamicScanId!=null
+      - propertyName: staticScanSummary
+        uri: /api/v3/scans/{currentStaticScanId}/summary
+        embedIf: currentStaticScanId!=null
+  vulnerability:
+    embed:                           # Load extra data, depending on what data you want to include in output
+      - subEntity: all-data
+
+json.raw.output:
+  stdout: true                       # Useful for debugging, disable for optimal performance
+  pretty: true                       # Useful for debugging, disable for optimal performance

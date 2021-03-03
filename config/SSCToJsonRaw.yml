@@ -1,0 +1,20 @@
+# See FortifyVulnerabilityExporter documentation for SSC connection settings and application version selection
+
+export:
+  from: ssc
+  to: json.raw
+
+ssc:
+  version:
+    embed:          # Load extra data, depending on what data you want to include in output
+      - subEntity: currentStaticScan
+        onError: LOG_INFO
+      - subEntity: currentDynamicScan
+        onError: LOG_INFO
+  vulnerability:
+    embed:          # Load extra data, depending on what data you want to include in output
+      - subEntity: details
+
+json.raw.output:
+  stdout: true      # Useful for debugging, disable for optimal performance
+  pretty: true      # Useful for debugging, disable for optimal performance
