@@ -1,0 +1,51 @@
+on: 
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+name: FoD scan  
+
+jobs:
+  FoD-SAST-Scan-And-Import:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Out Source Code
+        uses: actions/checkout@v2
+      
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      
+      - name: Download Fortify ScanCentral Client
+        uses: fortify/gha-setup-scancentral-client@v1
+      - name: Package Code + Dependencies
+        run: scancentral package -bt gradle -o package.zip
+      
+      - name: Download Fortify on Demand Universal CI Tool
+        uses: fortify/gha-setup-fod-uploader@v1
+      - name: Perform SAST Scan
+        run: java -jar $FOD_UPLOAD_JAR -z package.zip -aurl $FOD_AURL -purl $FOD_PURL -rid $FOD_RELEASE_ID -tc "$FOD_TENANT" -uc "$FOD_USER" "$FOD_PAT" $FOD_UPLOADER_OPTS
+        env: 
+          FOD_AURL: ${{ secrets.OSS_FOD_API_URL }}
+          FOD_PURL: ${{ secrets.OSS_FOD_BASE_URL }}
+          FOD_TENANT: ${{ secrets.OSS_FOD_TENANT }}
+          FOD_USER: ${{ secrets.OSS_FOD_USER }}
+          FOD_PAT: ${{ secrets.OSS_FOD_PAT }}
+          FOD_RELEASE_ID: ${{ secrets.OSS_FOD_RELEASE_ID }}
+          FOD_UPLOADER_OPTS: "-ep 2 -pp 0 -I 1 -apf"
+      
+      - name: Export results to GitHub-optimized SARIF
+        uses: fortify/gha-export-vulnerabilities@v1
+        with:
+          fod_base_url: ${{ secrets.OSS_FOD_BASE_URL }}
+          fod_tenant: ${{ secrets.OSS_FOD_TENANT }}
+          fod_user: ${{ secrets.OSS_FOD_USER }}
+          fod_password: ${{ secrets.OSS_FOD_PAT }}
+          fod_release_id: ${{ secrets.OSS_FOD_RELEASE_ID }}
+      
+      - name: Import results to GitHub Security Code Scanning
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ./gh-fortify-sast.sarif
