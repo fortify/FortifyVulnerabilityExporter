@@ -22,4 +22,4 @@ SOFTWARE.
 
 ---
 
-*This document was auto-generated from a template; do not edit by hand*
+*This document was auto-generated from LICENSE.MIT.template.txt; do not edit by hand*
