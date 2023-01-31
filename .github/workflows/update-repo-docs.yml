@@ -1,0 +1,25 @@
+name: doc-resource-updater
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '5 4 * * *'
+  push:
+    branches:
+      - main
+
+jobs:
+  update-repo-doc-resources:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Update documentation resources
+      run: bash doc-resources/update-repo-docs.sh
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: 'docs: Auto-update documentation resources' 
