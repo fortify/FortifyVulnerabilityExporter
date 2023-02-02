@@ -10,4 +10,4 @@ on:
       
 jobs:
   update-repo-docs:
-    uses: fortify/shared-doc-resources/.github/workflows/update-repo-docs.yml
+    uses: fortify/shared-doc-resources/.github/workflows/update-repo-docs.yml@main
